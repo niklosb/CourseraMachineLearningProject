@@ -1,0 +1,141 @@
+---
+title: "Predicting Motion Classe with Machine Learning Techniques"
+author: "Nik Bosnyak"
+date: "Wednesday, August 06, 2014"
+output: html_document
+---
+
+Abstract
+--------------------------------
+The goal of this project is to classify exercises being performed from various sensors attached to subjects bodies. The data was partitioned into an 80/20 (training/testing) cross-validation set. The training data was used to train a bootstrapped random forest, which produced an in sample accuracy of 99%. When the model was used to predict the class of the test data, an accuracy of 99.52% was observed.
+
+
+Data Preparation
+--------------------------------
+To prepare the data, I loaded the training and test sets into data frames. Nearly half of the columns were used for aggregations of the time series data and were not in any of the test cases, so I removed them. This left only 54 variables to use for modeling.
+
+```{r, eval=FALSE}
+library(caret)
+library(kernlab)
+library(ggplot2)
+library(randomForest)
+
+setwd("~/GitHub/CourseraMachineLearningProject")
+rawTrainingSet <- read.csv("./pml-training.csv")
+rawValidationSet <- read.csv("./pml-testing.csv")
+
+selectedColumns <- c(2,8,9,10,11,37,38,39,40,41,42,43,44,45,46,47,48,49,60,61,62,63,64,65,66,67,68,84,85,86,102,113,114,115,116,117,118,119,120,121,122,123,124,140,151,152,153,154,155,156,157,158,159,160)
+
+dfTrain <- rawTrainingSet[,selectedColumns]
+dfValidate<- rawValidationSet[,selectedColumns]
+```
+
+Next, I chose 80% of my data to use as the training data and 20% to use as the testing data for cross validation.
+```{r, eval=FALSE}
+inTrain <- createDataPartition(y=dfTrain$classe, p=0.8, list=FALSE)
+training <- dfTrain[inTrain,]
+testing <- dfTrain[-inTrain,]
+```
+
+Feature and Model Selection
+--------------------------------
+I initially ran a recursive partitioning tree for classifying the data, but received very poor results. Next, I created a bootstrapped random forest with 29 variables per tree. 
+```{r,eval=FALSE}
+#fit<-train(classe~., data=training, method="rpart") #~45% accuracy
+fit<-train(classe~., data=training, method="rf", prox=TRUE)# >99% accuracy
+```
+
+Results
+--------------------------------
+This model resulted in exceptionally well performance with an accuracy >99%. The in-sample error was very low with an OOB estimate of 0.61% and an accuracy of 99%
+```{r,eval=FALSE}
+fit$finalModel
+
+#                Type of random forest: classification
+#                      Number of trees: 500
+# No. of variables tried at each split: 29
+# 
+#         OOB estimate of  error rate: 0.61%
+# 
+# Confusion matrix:
+#      A    B    C    D    E class.error
+# A 4459    3    1    0    1 0.001120072
+# B   22 3010    6    0    0 0.009216590
+# C    0    7 2722    9    0 0.005843682
+# D    1    1   30 2538    3 0.013602798
+# E    0    0    4    8 2874 0.004158004
+```
+
+Cross-Validation
+--------------------------------
+Out-of-sample error was very low with an accuracy of 99.52%
+```{r,eval=FALSE}
+predictions <- predict(fit, newdata=testing)
+confusionMatrix(predictions, testing$classe)
+
+# Confusion Matrix and Statistics
+# 
+#           Reference
+# Prediction    A    B    C    D    E
+#          A 1116    4    0    0    0
+#          B    0  752    1    0    0
+#          C    0    3  681    8    0
+#          D    0    0    2  635    1
+#          E    0    0    0    0  720
+# 
+# Overall Statistics
+#                                           
+#                Accuracy : 0.9952          
+#                  95% CI : (0.9924, 0.9971)
+#     No Information Rate : 0.2845          
+#     P-Value [Acc > NIR] : < 2.2e-16       
+#                                           
+#                   Kappa : 0.9939          
+#  Mcnemar's Test P-Value : NA              
+# 
+# Statistics by Class:
+# 
+#                      Class: A Class: B Class: C Class: D Class: E
+# Sensitivity            1.0000   0.9908   0.9956   0.9876   0.9986
+# Specificity            0.9986   0.9997   0.9966   0.9991   1.0000
+# Pos Pred Value         0.9964   0.9987   0.9841   0.9953   1.0000
+# Neg Pred Value         1.0000   0.9978   0.9991   0.9976   0.9997
+# Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+# Detection Rate         0.2845   0.1917   0.1736   0.1619   0.1835
+# Detection Prevalence   0.2855   0.1919   0.1764   0.1626   0.1835
+# Balanced Accuracy      0.9993   0.9952   0.9961   0.9933   0.9993
+```
+
+
+Export Prediction Assignment
+--------------------------------
+This is the prediction and export of the Prediction Assignment that is submitted on the Coursera website.
+NOTE: With this model, 20/20 submissions were accepted on the first attempt.
+```{r,eval=FALSE}
+validationPred <- predict(fit, newdata=validationSet)
+
+#Convert data frame to character vector
+answers <- data.frame(lapply(validationPred, as.character), stringsAsFactors=FALSE)
+
+#Function to output validation set answers in submittable format
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+
+```
+
+Final Note
+--------------------------------
+The model above took several hours to run, so the results have been inserted as comments for ease of publishing.
+
+References
+--------------------------------
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz3AEKqPvbA
