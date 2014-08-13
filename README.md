@@ -3,7 +3,9 @@ Coursera Machine Learning Project
 
 How to Use
 ------------------------------
-Download the training and testing data below. Put the contents of this repository and the two files below in a common directory. Run MLAnalysis in R/Rstudio.
+Download the training and testing data below. Put the two files in a directory with the contents of this directory. Run MLAnalysis in R/Rstudio.
+
+Note: Additional packages may need to be installed.
 
 Project Requirements
 ------------------------------
