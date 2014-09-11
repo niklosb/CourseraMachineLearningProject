@@ -1,6 +1,10 @@
 Coursera Machine Learning Project
 ==============================
 
+RPubs
+-------------------------------
+http://rpubs.com/niklosb/PredictingMotionClasseWithMachineLearningTechniques
+
 How to Use
 ------------------------------
 Download the training and testing data below. Put the two files in a directory with the contents of this directory. Run MLAnalysis in R/Rstudio.
